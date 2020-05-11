@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         MK-112
+// @name         MK-112-Test
 // @namespace    http://meldkamersspel.com/
 // @version      0.0.3
 // @description  Game enriching
@@ -14,7 +14,7 @@
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
-console.log('MK-112 loaded, Version 0.0.2');
+console.log('MK-112 loaded');
 
 var missionTypes = JSON.parse(localStorage.getItem('mk112-mission-types'));
 
@@ -23,25 +23,23 @@ var missionTypes = JSON.parse(localStorage.getItem('mk112-mission-types'));
 
     waitForKeyElements ( "#iframe-inside-container", iFrameCheck);
 
-    waitForKeyElements ('.missionSideBarEntry', (entry) => {
+    waitForKeyElements ('.missionSideBarEntry div.panel', (panel) => {
+        const entry = panel[0].parentNode;
         if (!missionTypes || missionTypes.length === 0) {
             console.log('First load mission screen');
             return;
         }
 
-        var missionTypeId = +entry[0].getAttribute('mission_type_id');
+        var missionTypeId = +entry.getAttribute('mission_type_id');
         var missionType = missionTypes.find(value => value.id === missionTypeId);
         if (missionType && missionType.credits) {
-            var elTitle = entry[0].querySelector('a.map_position_mover');
+            var elTitle = entry.querySelector('a.map_position_mover');
             elTitle.innerHTML = elTitle.innerHTML + ' <b>(' + missionType.credits + ' credits)</b>';
-        } else {
-            console.log('mission not found', missionTypeId, entry[0]);
         }
     });
 
     function iFrameCheck() {
         var parts = window.location.pathname.split('/');
-
 
         switch (parts[1]) {
             case 'einsaetze':
@@ -93,5 +91,4 @@ var missionTypes = JSON.parse(localStorage.getItem('mk112-mission-types'));
         }
       });
     }
-
   })();

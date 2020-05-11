@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         MK-112-Test
+// @name         MK-112
 // @namespace    http://meldkamersspel.com/
 // @version      0.0.3
 // @description  Game enriching

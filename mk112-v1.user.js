@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MK-112
 // @namespace    http://meldkamersspel.com/
-// @version      0.0.2
+// @version      0.0.3
 // @description  Game enriching
 // @author       Dumb Scripts
 // @match        https://www.meldkamerspel.com/*
@@ -31,8 +31,6 @@ var missionTypes = JSON.parse(localStorage.getItem('mk112-mission-types'));
 
         var missionTypeId = +entry[0].getAttribute('mission_type_id');
         var missionType = missionTypes.find(value => value.id === missionTypeId);
-
-
         if (missionType && missionType.credits) {
             var elTitle = entry[0].querySelector('a.map_position_mover');
             elTitle.innerHTML = elTitle.innerHTML + ' <b>(' + missionType.credits + ' credits)</b>';
@@ -58,7 +56,7 @@ var missionTypes = JSON.parse(localStorage.getItem('mk112-mission-types'));
 
     }
 
-    function iFrameMissionTypes(){
+    function iFrameMissionTypes() {
         waitForKeyElements ( "#no_leitstelle tr.mission_type_index_searchable:nth-child(10)", (s) => {
             var missionTypes = [];
             document.querySelectorAll('#no_leitstelle tr.mission_type_index_searchable').forEach( (row) => {
@@ -79,6 +77,21 @@ var missionTypes = JSON.parse(localStorage.getItem('mk112-mission-types'));
             localStorage.setItem('mk112-mission-types', JSON.stringify(missionTypes));
         }, true);
 
+    }
+
+    function iFrameMission() {
+      waitForKeyElements ( "#mission_help", (s) => {
+        const url = new URL(s[0].getAttribute('href'), window.location);
+
+        var parts = url.pathname.split('/');
+        var missionTypeId = +parts[2];
+
+        var missionType = missionTypes.find(value => value.id === missionTypeId);
+        if (missionType && missionType.credits) {
+            var elTitle = document.querySelector('#missionH1');
+            elTitle.innerHTML = elTitle.innerHTML + ' <b>(' + missionType.credits + ' credits)</b>';
+        }
+      });
     }
 
   })();

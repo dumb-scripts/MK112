@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MK-112
 // @namespace    http://meldkamersspel.com/
-// @version      0.0.1
+// @version      0.0.2
 // @description  Game enriching
 // @author       Rumpie Dumb
 // @match        https://www.meldkamerspel.com/*
@@ -14,4 +14,4 @@
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
-console.log('MK-112 loaded');
+console.log('MK-112 loaded, Version 0.0.2');

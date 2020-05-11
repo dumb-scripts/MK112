@@ -14,4 +14,4 @@
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
-console.log('starter');
+console.log('MK-112 loaded');

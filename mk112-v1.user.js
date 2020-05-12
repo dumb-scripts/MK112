@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MK-112
 // @namespace    http://meldkamersspel.com/
-// @version      0.0.3
+// @version      0.0.4
 // @description  Game enriching
 // @author       Dumb Scripts
 // @match        https://www.meldkamerspel.com/*
@@ -16,6 +16,26 @@ this.$ = this.jQuery = jQuery.noConflict(true);
 
 console.log('MK-112 loaded');
 
+var style = document.createElement('style');
+
+style.innerHTML = `
+div.mk112-mission-holder { position: relative; height: 9px; margin-top: 2px; }
+span.mk112-mission-credits {
+  font-size: smaller;
+  position: absolute;
+  right: 10px;
+  top: -2px;
+  border: 1px solid #ddd;
+  background: white;
+  padding: 3px 3px 0px 3px;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+`;
+var ref = document.querySelector('script');
+ref.parentNode.insertBefore(style, ref);
+
+
 var missionTypes = JSON.parse(localStorage.getItem('mk112-mission-types'));
 
 (function() {
@@ -23,18 +43,26 @@ var missionTypes = JSON.parse(localStorage.getItem('mk112-mission-types'));
 
     waitForKeyElements ( "#iframe-inside-container", iFrameCheck);
 
-    waitForKeyElements ('.missionSideBarEntry div.panel', (panel) => {
-        const entry = panel[0].parentNode;
+    waitForKeyElements ('.missionSideBarEntry div.panel', (panels) => {
         if (!missionTypes || missionTypes.length === 0) {
             console.log('First load mission screen');
             return;
         }
 
+        const panel = panels[0];
+        const entry = panel.parentNode;
+
         var missionTypeId = +entry.getAttribute('mission_type_id');
         var missionType = missionTypes.find(value => value.id === missionTypeId);
         if (missionType && missionType.credits) {
-            var elTitle = entry.querySelector('a.map_position_mover');
-            elTitle.innerHTML = elTitle.innerHTML + ' <b>(' + missionType.credits + ' credits)</b>';
+            var holder = document.createElement("div");
+            holder.classList.add('mk112-mission-holder');
+            panel.before(holder);
+
+            var btn = document.createElement("span");
+            btn.innerHTML = missionType.credits + ' credits';
+            btn.classList.add('mk112-mission-credits');
+            holder.appendChild(btn);
         }
     });
 
@@ -49,7 +77,7 @@ var missionTypes = JSON.parse(localStorage.getItem('mk112-mission-types'));
                 iFrameMission();
                 break;
             default:
-                console.log('iframe not yet supported: ' +parts[1]);
+                // console.log('iframe not yet supported: ' +parts[1]);
         }
 
     }
@@ -78,17 +106,17 @@ var missionTypes = JSON.parse(localStorage.getItem('mk112-mission-types'));
     }
 
     function iFrameMission() {
-      waitForKeyElements ( "#mission_help", (s) => {
-        const url = new URL(s[0].getAttribute('href'), window.location);
+        waitForKeyElements ( "#mission_help", (s) => {
+            const url = new URL(s[0].getAttribute('href'), window.location);
 
-        var parts = url.pathname.split('/');
-        var missionTypeId = +parts[2];
+            var parts = url.pathname.split('/');
+            var missionTypeId = +parts[2];
 
-        var missionType = missionTypes.find(value => value.id === missionTypeId);
-        if (missionType && missionType.credits) {
-            var elTitle = document.querySelector('#missionH1');
-            elTitle.innerHTML = elTitle.innerHTML + ' <b>(' + missionType.credits + ' credits)</b>';
-        }
-      });
+            var missionType = missionTypes.find(value => value.id === missionTypeId);
+            if (missionType && missionType.credits) {
+                var elTitle = document.querySelector('#missionH1');
+                elTitle.innerHTML = elTitle.innerHTML + ' <b>(' + missionType.credits + ' credits)</b>';
+            }
+        });
     }
-  })();
+})();

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MK-112
 // @namespace    http://meldkamersspel.com/
-// @version      0.0.7
+// @version      0.0.8
 // @description  Game enriching
 // @author       Dumb Scripts
 // @match        https://www.meldkamerspel.com/*
@@ -15,7 +15,15 @@
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
-console.log('MK-112 loaded');
+//
+// ## Settings ##
+// You can change some settings here. This will be reset to default when a new version arrives.
+// In the future this can be done through a settings screen, without loosing it.
+//
+const mk112 = {
+    notification: {other: false, important : true},
+    voice: {other: false, important: true}
+};
 
 var style = document.createElement('style');
 
@@ -34,7 +42,7 @@ span.mk112-mission-credits {
   box-sizing: border-box;
 }
 `;
-var ref = document.querySelector('script');
+const ref = document.querySelector('script');
 ref.parentNode.insertBefore(style, ref);
 
 
@@ -90,26 +98,32 @@ var messageCount = 0;
 
     function checkRadioMessages(messages) {
         const message = messages[0];
-        console.log(message);
 
         const vehicleName = message.querySelector('a:nth-of-type(1)').innerText;
+        const action = message.querySelector('span.building_list_fms').getAttribute('title');
+        var important = false;
+        var between = 'is';
 
         switch (message.querySelector('span.building_list_fms').innerText) {
             case '1': // Uitgerukt
-                console.log(vehicleName, 1);
                 break;
             case '2': // Ter plaatse
-                console.log(vehicleName, 2);
                 break;
             case '4': // Beschikbaar
-                console.log(vehicleName, 4);
                 break;
             case '5': // Op post
-                console.log(vehicleName, 5);
                 break;
             case '7': // Aanvraag spraakcontact
-                notify(vehicleName, message.querySelector('span.building_list_fms').getAttribute('title'));
+                important = true;
+                between = ' ';
                 break;
+        }
+
+        if (mk112.notification.other || (important && mk112.notification.important)) {
+          notify(vehicleName, action);
+        }
+        if (mk112.voice.other || (important && mk112.voice.important)) {
+          speak(`${vehicleName}, ${between} ${action}`);
         }
     }
 
@@ -217,5 +231,21 @@ var messageCount = 0;
                 }
             });
         }
+    }
+
+    function speak(text) {
+        // Let's check if the browser supports notifications
+        if (!("SpeechSynthesisUtterance" in window)) {
+            console.log("This browser does not support text to speech");
+            return;
+        }
+
+        var u1 = new SpeechSynthesisUtterance(text);
+        u1.lang = 'nl-NL';
+        u1.pitch = 1;
+        u1.rate = 0.7;
+        u1.voiceURI = 'native';
+        u1.volume = 1;
+        speechSynthesis.speak(u1);
     }
 })();

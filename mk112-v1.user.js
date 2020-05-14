@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MK-112
 // @namespace    http://meldkamersspel.com/
-// @version      0.0.6
+// @version      0.0.7
 // @description  Game enriching
 // @author       Dumb Scripts
 // @match        https://www.meldkamerspel.com/*
@@ -28,6 +28,7 @@ span.mk112-mission-credits {
   top: -2px;
   border: 1px solid #ddd;
   background: white;
+  color: black;
   padding: 3px 3px 0px 3px;
   border-radius: 4px;
   box-sizing: border-box;

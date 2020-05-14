@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MK-112
 // @namespace    http://meldkamersspel.com/
-// @version      0.0.5
+// @version      0.0.6
 // @description  Game enriching
 // @author       Dumb Scripts
 // @match        https://www.meldkamerspel.com/*
@@ -38,6 +38,7 @@ ref.parentNode.insertBefore(style, ref);
 
 
 var missionTypes = JSON.parse(localStorage.getItem('mk112-mission-types'));
+var messageCount = 0;
 
 (function() {
     'use strict';
@@ -66,6 +67,50 @@ var missionTypes = JSON.parse(localStorage.getItem('mk112-mission-types'));
             holder.appendChild(btn);
         }
     });
+
+    waitForKeyElements ('#message_top', (badge) => {
+        setInterval(() => {
+            const amount = +badge[0].innerText;
+
+            if (messageCount < amount) {
+                if (amount - messageCount === 1) {
+                    notify('Berichten', 'Er is een nieuw bericht');
+                } else {
+                    notify('Berichten', `Er zijn ${amount-messageCount} nieuwe berichten`);
+                }
+            }
+
+            messageCount = amount;
+        }, 1000);
+    });
+
+    waitForKeyElements ('ul#radio_messages_important li', checkRadioMessages);
+    waitForKeyElements ('ul#radio_messages li', checkRadioMessages);
+
+    function checkRadioMessages(messages) {
+        const message = messages[0];
+        console.log(message);
+
+        const vehicleName = message.querySelector('a:nth-of-type(1)').innerText;
+
+        switch (message.querySelector('span.building_list_fms').innerText) {
+            case '1': // Uitgerukt
+                console.log(vehicleName, 1);
+                break;
+            case '2': // Ter plaatse
+                console.log(vehicleName, 2);
+                break;
+            case '4': // Beschikbaar
+                console.log(vehicleName, 4);
+                break;
+            case '5': // Op post
+                console.log(vehicleName, 5);
+                break;
+            case '7': // Aanvraag spraakcontact
+                notify(vehicleName, message.querySelector('span.building_list_fms').getAttribute('title'));
+                break;
+        }
+    }
 
     function iFrameCheck() {
         var parts = window.location.pathname.split('/');
@@ -134,32 +179,42 @@ var missionTypes = JSON.parse(localStorage.getItem('mk112-mission-types'));
                     return false;
                 }
 
-                const btnOvD = document.createElement("button");
-                btnOvD.innerHTML = 'OvD';
-                btnOvD.classList.add('btn', 'btn-default');
-                btnOvD.type = 'button';
-                btnOvD.onclick = () => buttonFunc('OvD');
+                const quickButtons = ['OvD','HOD','CO','ZULU'];
+                quickButtons.forEach((value)=>{
+                    const btn = document.createElement("button");
+                    btn.innerHTML = value;
+                    btn.classList.add('btn', 'btn-default');
+                    btn.type = 'button';
+                    btn.onclick = () => buttonFunc(value);
+                    btnGroup.appendChild(btn);
+                });
 
-                const btnHOD = document.createElement("button");
-                btnHOD.innerHTML = 'HOD';
-                btnHOD.type = 'button';
-                btnHOD.classList.add('btn', 'btn-default');
-                btnHOD.onclick = () => buttonFunc('HOD');
-
-                const btnCO = document.createElement("button");
-                btnCO.innerHTML = 'CO';
-                btnCO.type = 'button';
-                btnCO.classList.add('btn', 'btn-default');
-                btnCO.onclick = () => buttonFunc('CO');
-
-                btnGroup.appendChild(btnOvD);
-                btnGroup.appendChild(btnHOD);
-                btnGroup.appendChild(btnCO);
                 inputReply.parentNode.before(btnGroup);
-
-            } else {
-              console.log('inputReply not found');
             }
         });
+    }
+
+    function notify(title, text) {
+        // Let's check if the browser supports notifications
+        if (!("Notification" in window)) {
+            console.log("This browser does not support desktop notification");
+            return;
+        }
+
+        // Function for sending notifications
+        const sendNotification = (title, message) => {
+            var notification = new Notification(title, { body: message, icon: 'https://www.meldkamerspel.com/images/logo-header.png' });
+        }
+
+        // Let's check whether notification permissions have already been granted
+        if (Notification.permission === "granted") {
+            sendNotification(title, text);
+        } else if (Notification.permission !== "denied") {
+            Notification.requestPermission().then(function (permission) {
+                if (permission === "granted") {
+                    sendNotification(title, text);
+                }
+            });
+        }
     }
 })();

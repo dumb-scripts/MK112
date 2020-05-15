@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MK-112
 // @namespace    http://meldkamersspel.com/
-// @version      0.0.9
+// @version      0.0.10
 // @description  Game enriching
 // @author       Dumb Scripts
 // @match        https://www.meldkamerspel.com/*
@@ -104,7 +104,8 @@ var messageCount = 0;
             return;
         }
 
-        const vehicleName = message.querySelector('a:nth-of-type(1)').innerText;
+        const vehicleLink = message.querySelector('a:nth-of-type(1)');
+        const vehicleName = (vehicleLink) ? vehicleLink.innerText : '';
         const action = message.querySelector('span.building_list_fms').getAttribute('title');
         var important = false;
         var between = 'is';

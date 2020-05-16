@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MK-112
 // @namespace    http://meldkamersspel.com/
-// @version      0.0.10
+// @version      0.0.11
 // @description  Game enriching
 // @author       Dumb Scripts
 // @match        https://www.meldkamerspel.com/*
@@ -99,7 +99,7 @@ var messageCount = 0;
     function checkRadioMessages(messages) {
         const message = messages[0];
 
-        if (message.style.display === 'none') {
+        if (message.style.display === 'none' || message.className === '' ) {
             // Do not handle hidden messages
             return;
         }

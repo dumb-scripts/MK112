@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MK-112
 // @namespace    http://meldkamersspel.com/
-// @version      0.0.11
+// @version      0.1.1
 // @description  Game enriching
 // @author       Dumb Scripts
 // @match        https://www.meldkamerspel.com/*
@@ -15,16 +15,7 @@
 
 this.$ = this.jQuery = jQuery.noConflict(true);
 
-//
-// ## Settings ##
-// You can change some settings here. This will be reset to default when a new version arrives.
-// In the future this can be done through a settings screen, without loosing it.
-//
-const mk112 = {
-    notification: {other: false, important : true},
-    voice: {other: false, important: true}
-};
-
+var mk112 = JSON.parse(localStorage.getItem('mk112-settings'))
 var style = document.createElement('style');
 
 style.innerHTML = `
@@ -41,6 +32,19 @@ span.mk112-mission-credits {
   border-radius: 4px;
   box-sizing: border-box;
 }
+
+span.mk112-mission-shareable {
+  background: green !important;
+  color: white !important;
+}
+
+.modal-backdrop {
+  z-index: 9998 !important;
+}
+
+.modal {
+  z-index: 9999 !important;
+}
 `;
 const ref = document.querySelector('script');
 ref.parentNode.insertBefore(style, ref);
@@ -51,6 +55,8 @@ var messageCount = 0;
 
 (function() {
     'use strict';
+
+    waitForKeyElements ( "ul.navbar-right", doNavigation);
 
     waitForKeyElements ( "#iframe-inside-container", iFrameCheck);
 
@@ -73,6 +79,9 @@ var messageCount = 0;
             var btn = document.createElement("span");
             btn.innerHTML = missionType.credits + ' credits';
             btn.classList.add('mk112-mission-credits');
+            if (mk112.minShareCredits && missionType.credits >= +mk112.minShareCredits) {
+                btn.classList.add('mk112-mission-shareable');
+            }
             holder.appendChild(btn);
         }
     });
@@ -82,10 +91,12 @@ var messageCount = 0;
             const amount = +badge[0].innerText;
 
             if (messageCount < amount) {
-                if (amount - messageCount === 1) {
-                    notify('Berichten', 'Er is een nieuw bericht');
-                } else {
-                    notify('Berichten', `Er zijn ${amount-messageCount} nieuwe berichten`);
+                var message = amount - messageCount === 1 ? 'Er is een nieuw bericht' : `Er zijn ${amount-messageCount} nieuwe berichten`;
+                if (mk112.messageVisual) {
+                    notify('Berichten', message);
+                }
+                if (mk112.messageSound) {
+                    speak(message);
                 }
             }
 
@@ -109,6 +120,7 @@ var messageCount = 0;
         const action = message.querySelector('span.building_list_fms').getAttribute('title');
         var important = false;
         var between = 'is';
+        var type = 'normal';
 
         switch (message.querySelector('span.building_list_fms').innerText) {
             case '1': // Uitgerukt
@@ -120,15 +132,32 @@ var messageCount = 0;
             case '5': // Op post
                 break;
             case '7': // Aanvraag spraakcontact
+                type = action.includes('uitgebreid') ? 'extend' : 'speak';
                 important = true;
                 between = ' ';
                 break;
         }
 
-        if (mk112.notification.other || (important && mk112.notification.important)) {
+        var sound = false;
+        var visual = false;
+        switch (type) {
+            case 'extend':
+                sound = mk112.extendSound;
+                visual = mk112.extendVisual;
+                break;
+            case 'speak':
+                sound = mk112.speakSound;
+                visual = mk112.speakVisual;
+                break;
+            default:
+                sound = mk112.otherSound;
+                visual = mk112.otherVisual;
+        }
+
+        if (visual) {
             notify(vehicleName, action);
         }
-        if (mk112.voice.other || (important && mk112.voice.important)) {
+        if (sound) {
             speak(`${vehicleName}, ${between} ${action}`);
         }
     }
@@ -253,5 +282,136 @@ var messageCount = 0;
         u1.voiceURI = 'native';
         u1.volume = 1;
         speechSynthesis.speak(u1);
+    }
+
+    function doNavigation(items){
+        const navbarRight = items[0];
+
+        const btn = document.createElement("ul");
+        btn.innerHTML = 'MK112';
+        btn.classList.add('btn', 'btn-xs', 'btn-default');
+        btn.setAttribute('data-toggle', 'modal')
+        btn.setAttribute('data-target', '#settingsModal');
+
+        btn.onclick = loadSettings;
+
+        navbarRight.appendChild(btn);
+
+        createDialog();
+    }
+
+    /**
+     * Settings dialog
+     */
+    var modal;
+
+    function createDialog() {
+        if (!modal) {
+            // dialog created;
+
+            modal = document.createElement("div");
+            modal.id = 'settingsModal';
+            modal.classList.add('modal', 'fade');
+            modal.setAttribute('role', 'dialog');
+            modal.setAttribute('tabindex', '-1');
+            modal.innerHTML =  `
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">MK-112 Instellingen</h4>
+      </div>
+      <div class="modal-body">
+        <form id="mk112-settings-form">
+          <h2>Notificaties</h2>
+          <table class="table">
+          <thead>
+          <tr>
+            <th></th>
+            <th style="text-align:center">Melding</th>
+            <th style="text-align:center">Spraak melding</th>
+          </tr>
+          <thead>
+          <tbody>
+          <tr>
+            <td>Berichten</td>
+            <td style="text-align:center"><input type="checkbox" name='messageVisual'></td>
+            <td style="text-align:center"><input type="checkbox" name='messageSound'></td>
+          </tr>
+          <tr>
+            <td>Spraakaanvragen</td>
+            <td style="text-align:center"><input type="checkbox" name='speakVisual'></td>
+            <td style="text-align:center"><input type="checkbox" name='speakSound'></td>
+          </tr>
+          <tr>
+            <td>Uitbreidingen</td>
+            <td style="text-align:center"><input type="checkbox" name='extendVisual'></td>
+            <td style="text-align:center"><input type="checkbox" name='extendSound'></td>
+          </tr>
+          <tr>
+            <td>Overige</td>
+            <td style="text-align:center"><input type="checkbox" name='otherVisual'></td>
+            <td style="text-align:center"><input type="checkbox" name='otherSound'></td>
+          </tr>
+          <tbody>
+          </table>
+            <div class="form-group">
+              <label for="exampleInputEmail1">Minimale credits voor delen</label>
+              <input type="number" class="form-control" name="minShareCredits" placeholder="Minimale credits voor delen">
+            </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button id="saveSettings" type="button" class="btn btn-primary" data-dismiss="modal" aria-label="Close">Opslaan</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+`;
+
+            document.querySelector('body').appendChild(modal);
+
+            var btnClose = modal.querySelector('button#saveSettings')
+            btnClose.onclick = saveSettings;
+        }
+
+
+    }
+
+    function loadSettings() {
+        var form = document.querySelector('#mk112-settings-form');
+
+        if (!mk112) {
+            return;
+        }
+
+        var elements = form.elements;
+        for(var i = 0 ; i < elements.length ; i++){
+            var item = elements.item(i);
+            if (item && mk112[item.name]) {
+                if (item.matches('[type="checkbox"]')) {
+                    item.checked = mk112[item.name];
+                } else {
+                    item.value = mk112[item.name];
+                }
+            }
+        }
+    }
+
+    function saveSettings() {
+        var form = document.querySelector('#mk112-settings-form');
+        var elements = form.elements;
+        var settings ={};
+        for(var i = 0 ; i < elements.length ; i++){
+            var item = elements.item(i);
+
+            if (item.matches('[type="checkbox"]')) {
+                settings[item.name] = item.checked; // item.value === 'on';
+            } else {
+                settings[item.name] = item.value;
+            }
+        }
+
+        mk112 = settings;
+        localStorage.setItem('mk112-settings', JSON.stringify(mk112));
     }
 })();

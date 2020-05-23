@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MK-112
 // @namespace    http://meldkamersspel.com/
-// @version      0.1.1
+// @version      0.1.2
 // @description  Game enriching
 // @author       Dumb Scripts
 // @match        https://www.meldkamerspel.com/*
@@ -208,28 +208,66 @@ var messageCount = 0;
             var parts = url.pathname.split('/');
             var missionTypeId = +parts[2];
 
-            var missionType = missionTypes.find(value => value.id === missionTypeId);
-            const missionCredits = (missionType && missionType.credits) ? missionType.credits : '?';
+            var isPlanned = false;
+            var missionCredits = 0;
 
-            if (missionType && missionType.credits) {
-                var elTitle = document.querySelector('#missionH1');
-                elTitle.innerHTML = elTitle.innerHTML + ' <b>(' + missionCredits + ' credits)</b>';
+            // Determine the missionType
+            const missionType = missionTypes.find(value => value.id === missionTypeId);
+
+            // Did we already send an vehicle
+            const ownVehicleSend = !!document.querySelector('.btn-backalarm-ajax');
+
+            // Can we find if the credits are in the screen, then this is a planned mission
+            const colLeftText = document.querySelector('#col_left').textContent;
+            if ( colLeftText.includes('Verdiensten')) {
+                isPlanned = true;
+                missionCredits = +(colLeftText.substring(colLeftText.indexOf('Verdiensten'), colLeftText.indexOf('Credits')).replace('Verdiensten:', '').trim().replace('.', ''));
+            } else {
+                missionCredits = (missionType && missionType.credits) ? +missionType.credits : 0;
             }
 
+            // Format the credits text
+            var missionCreditsText = missionCredits.toLocaleString('nl-NL');
+
+            // Set the credits title
+            if (missionType && missionType.credits) {
+                var elTitle = document.querySelector('#missionH1');
+                elTitle.innerHTML = elTitle.innerHTML + ' <b>(' + missionCreditsText + ' credits)</b>';
+            }
+
+            // Is this mission shared
             var inputReply = document.querySelector('#mission_reply_content');
             if (inputReply) {
+                // Warning that there is already an vehilce send
+                if (ownVehicleSend) {
+                    const txtWarning = document.createElement('div');
+                    txtWarning.classList.add('alert');
+                    txtWarning.classList.add('alert-warning');
+                    txtWarning.innerHTML = 'U heeft al een voertuig naar deze missie gestuurd.';
+
+                    // mission_header_info row
+                    document.querySelector('.mission_header_info').after(txtWarning);
+                }
+
+
+                // Add buttons
                 const btnGroup = document.createElement('div');
                 btnGroup.classList.add('btn-group');
 
+                // Function when clicked on a button
                 const buttonFunc = (lastVehicle) => {
                     const date = new Date();
                     date.setHours( date.getHours() + 2 );
                     var timeText = moment(date).format('HH:mm');
-                    inputReply.value = `${missionCredits} Credits, ${lastVehicle} na ${timeText}`;
+                    if (isPlanned) {
+                        inputReply.value = `${missionCreditsText} Credits`;
+                    } else {
+                        inputReply.value = `${missionCreditsText} Credits, ${lastVehicle} na ${timeText}`;
+                    }
                     return false;
                 }
 
-                const quickButtons = ['OvD','HOD','CO','ZULU'];
+                const quickButtons = isPlanned ? ['Credits'] : ['OvD','HOD','CO','ZULU'];
                 quickButtons.forEach((value)=>{
                     const btn = document.createElement("button");
                     btn.innerHTML = value;

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MK-112
 // @namespace    http://meldkamersspel.com/
-// @version      0.1.2
+// @version      0.1.3
 // @description  Game enriching
 // @author       Dumb Scripts
 // @match        https://www.meldkamerspel.com/*
@@ -172,6 +172,9 @@ var messageCount = 0;
             case 'missions':
                 iFrameMission();
                 break;
+            case 'vehicles':
+                iFrameVehicles();
+                break;
             default:
                 // console.log('iframe not yet supported: ' +parts[1]);
         }
@@ -280,6 +283,17 @@ var messageCount = 0;
                 inputReply.parentNode.before(btnGroup);
             }
         });
+    }
+
+    function iFrameVehicles() {
+        const url = window.location.pathname.split('/');
+
+        if (url.length > 3 && url[3] === 'patient') {
+            const btnNext = document.querySelector("a[href^='/vehicles']");
+            if (btnNext && mk112.autoNextSpeak) {
+              btnNext.click();
+            }
+        }
     }
 
     function notify(title, text) {
@@ -393,10 +407,14 @@ var messageCount = 0;
           </tr>
           <tbody>
           </table>
-            <div class="form-group">
-              <label for="exampleInputEmail1">Minimale credits voor delen</label>
-              <input type="number" class="form-control" name="minShareCredits" placeholder="Minimale credits voor delen">
-            </div>
+          <div class="form-group">
+            <label for="exampleInputEmail1">Minimale credits voor delen</label>
+            <input type="number" class="form-control" name="minShareCredits" placeholder="Minimale credits voor delen">
+          </div>
+          <tr>
+            <td>Automatisch naar volgende spraakaanvraag</td>
+            <td style="text-align:center"><input type="checkbox" name='autoNextSpeak'></td>
+          </tr>
         </form>
       </div>
       <div class="modal-footer">

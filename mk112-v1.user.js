@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MK-112
 // @namespace    http://meldkamersspel.com/
-// @version      0.1.3
+// @version      0.1.4
 // @description  Game enriching
 // @author       Dumb Scripts
 // @match        https://www.meldkamerspel.com/*
@@ -246,7 +246,7 @@ var messageCount = 0;
                     const txtWarning = document.createElement('div');
                     txtWarning.classList.add('alert');
                     txtWarning.classList.add('alert-warning');
-                    txtWarning.innerHTML = 'U heeft al een voertuig naar deze missie gestuurd.';
+                    txtWarning.innerHTML = 'U heeft al een voertuig naar dit incident gestuurd.';
 
                     // mission_header_info row
                     document.querySelector('.mission_header_info').after(txtWarning);
@@ -287,8 +287,7 @@ var messageCount = 0;
 
     function iFrameVehicles() {
         const url = window.location.pathname.split('/');
-
-        if (url.length > 3 && url[3] === 'patient') {
+        if (url.length > 3 && (url[3] === 'patient' || url[3] === 'gefangener' )) {
             const btnNext = document.querySelector("a[href^='/vehicles']");
             if (btnNext && mk112.autoNextSpeak) {
               btnNext.click();
